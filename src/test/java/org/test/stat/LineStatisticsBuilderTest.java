@@ -2,6 +2,7 @@ package org.test.stat;
 
 import org.junit.Test;
 import org.test.input.pojo.Line;
+import org.test.stat.pojo.LineStatistics;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;

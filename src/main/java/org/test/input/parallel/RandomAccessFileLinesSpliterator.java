@@ -14,37 +14,41 @@ import java.util.Spliterator;
 import java.util.function.Consumer;
 
 public class RandomAccessFileLinesSpliterator implements Spliterator<Line>, Closeable {
+    private static volatile int splitCounter = 0;
     private static final String FILE_OPEN_MODE = "r";
     private static final int BUFFER_SIZE = 512;
     private static final int MIN_BATCH_SIZE = 2048;
 
     private final File file;
     private final RandomAccessFile randomAccessFile;
-    private final FencedInputStream fencedInputStream;
     private final BufferedReader reader;
     private long endPosition;
     private long counterIndicator;
+    private LimitedInputStream limitedInputStream;
+    private final int currentSplit = splitCounter++;
+    private final long startPosition;
 
     public RandomAccessFileLinesSpliterator(File file) throws IOException {
         this.file = file;
         this.endPosition = file.length() - 1;
         this.randomAccessFile = new RandomAccessFile(file, FILE_OPEN_MODE);
-        this.fencedInputStream = getFencedInputStream(randomAccessFile.getFD(), endPosition);
-        this.reader = new BufferedReader(new InputStreamReader(fencedInputStream));
+        this.reader = getBufferedReader(randomAccessFile.getFD(), endPosition);
         this.counterIndicator = 0;
+        this.startPosition = 0;
     }
 
     private RandomAccessFileLinesSpliterator(File file, RandomAccessFile randomAccessFile, long endPos) throws IOException {
         this.file = file;
+        this.startPosition = randomAccessFile.getFilePointer();
         this.endPosition = endPos;
         this.randomAccessFile = randomAccessFile;
-        this.fencedInputStream = getFencedInputStream(randomAccessFile.getFD(), endPos);
-        this.reader = new BufferedReader(new InputStreamReader(fencedInputStream));
-        this.counterIndicator = randomAccessFile.getFilePointer();
+        this.reader = getBufferedReader(randomAccessFile.getFD(), endPosition - startPosition);
+        this.counterIndicator = startPosition;
     }
 
-    private FencedInputStream getFencedInputStream(FileDescriptor fileDescriptor, long endPos) throws IOException {
-        return new FencedInputStream(new FileInputStream(fileDescriptor), endPos);
+    private BufferedReader getBufferedReader(FileDescriptor fileDescriptor, long endPos) throws IOException {
+        this.limitedInputStream = new LimitedInputStream(new FileInputStream(fileDescriptor), endPos);
+        return new BufferedReader(new InputStreamReader(limitedInputStream));
     }
 
     private long navigateFinalEol(RandomAccessFile randomAccessFile, long endPos) throws IOException {
@@ -83,9 +87,13 @@ public class RandomAccessFileLinesSpliterator implements Spliterator<Line>, Clos
         try {
             String lineText = reader.readLine();
             if (lineText != null) {
-                action.accept(new Line(counterIndicator++, lineText));
+                action.accept(new Line(counterIndicator, lineText));
+                counterIndicator += 1;
                 return true;
             } else {
+                if (randomAccessFile.getFilePointer() > endPosition) {
+                    throw new IllegalStateException(String.format("Split %d, end position (%d) is exceeded by %d byte(s)", currentSplit, endPosition, randomAccessFile.getFilePointer() - endPosition));
+                }
                 return false;
             }
         } catch (IOException e) {
@@ -102,7 +110,10 @@ public class RandomAccessFileLinesSpliterator implements Spliterator<Line>, Clos
                 RandomAccessFile splitRandomAccessFile = new RandomAccessFile(file, FILE_OPEN_MODE);
                 long splitEndPos = endPosition;
                 endPosition = navigateFinalEol(splitRandomAccessFile, splitPos);
-                fencedInputStream.fence(endPosition);
+                limitedInputStream.setLimit(endPosition - startPosition);
+                if (splitRandomAccessFile.getFilePointer() <= endPosition) {
+                    throw new IllegalStateException(String.format("The new iterator's position is before previous end"));
+                }
                 return new RandomAccessFileLinesSpliterator(file, splitRandomAccessFile, splitEndPos);
             } else {
                 return null;

@@ -1,6 +1,7 @@
 package org.test.stat;
 
 import org.test.input.pojo.Line;
+import org.test.stat.pojo.LineStatistics;
 
 import java.util.Arrays;
 import java.util.Comparator;

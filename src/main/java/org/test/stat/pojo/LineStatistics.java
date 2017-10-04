@@ -1,4 +1,4 @@
-package org.test.stat;
+package org.test.stat.pojo;
 
 import org.test.input.pojo.Line;
 
@@ -10,7 +10,7 @@ public class LineStatistics {
     private final int length;
     private final int averageWordLength;
 
-    LineStatistics(Line line, String longestWord, String shortestWord,
+    public LineStatistics(Line line, String longestWord, String shortestWord,
                    int length, int averageWordLength) {
         this.line = line;
         this.longestWord = longestWord;

@@ -5,12 +5,12 @@ import java.io.InputStream;
 
 import static java.lang.Math.min;
 
-public class FencedInputStream extends InputStream {
+public class LimitedInputStream extends InputStream {
     private final InputStream input;
     private long maxBytes;
     private long counter = 0;
 
-    public FencedInputStream(InputStream input, long maxBytes) {
+    public LimitedInputStream(InputStream input, long maxBytes) {
         this.input = input;
         this.maxBytes = maxBytes;
     }
@@ -86,7 +86,11 @@ public class FencedInputStream extends InputStream {
         throw new UnsupportedOperationException();
     }
 
-    public void fence(long newLimit) {
-        maxBytes = newLimit;
+    public void setLimit(long newLimit) {
+        if (newLimit < counter) {
+            throw new IllegalStateException(String.format("The new limit (%d) has been already exceeded by %d bytes",
+                    newLimit, counter - newLimit));
+        }
+        this.maxBytes = newLimit;
     }
 }
