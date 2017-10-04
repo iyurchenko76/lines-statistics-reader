@@ -1,4 +1,6 @@
-package org.test.stream;
+package org.test.input.stream;
+
+import org.test.input.pojo.Line;
 
 import java.util.Iterator;
 import java.util.Scanner;

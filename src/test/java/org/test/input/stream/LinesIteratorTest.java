@@ -1,11 +1,14 @@
-package org.test.stream;
+package org.test.input.stream;
 
 import org.junit.Test;
+import org.test.input.pojo.Line;
 
 import java.io.StringReader;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class LinesIteratorTest {
     @Test
@@ -19,17 +22,17 @@ public class LinesIteratorTest {
         assertTrue(it.hasNext());
         Line line1 = it.next();
         assertThat(line1.getSource(), is(first));
-        assertThat(line1.getStartPosition(), is(0L));
+        assertThat(line1.getPosIndicator(), is(0L));
 
         assertTrue(it.hasNext());
         Line line2 = it.next();
         assertThat(line2.getSource(), is(second));
-        assertThat(line2.getStartPosition(), is(1L));
+        assertThat(line2.getPosIndicator(), is(1L));
 
         assertTrue(it.hasNext());
         Line line3 = it.next();
         assertThat(line3.getSource(), is(third));
-        assertThat(line3.getStartPosition(), is(2L));
+        assertThat(line3.getPosIndicator(), is(2L));
 
         assertFalse(it.hasNext());
     }

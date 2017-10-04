@@ -1,6 +1,6 @@
 package org.test.stat;
 
-import org.test.stream.Line;
+import org.test.input.pojo.Line;
 
 public class LineStatistics {
 

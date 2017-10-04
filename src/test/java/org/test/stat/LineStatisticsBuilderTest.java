@@ -1,7 +1,7 @@
 package org.test.stat;
 
 import org.junit.Test;
-import org.test.stream.Line;
+import org.test.input.pojo.Line;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
