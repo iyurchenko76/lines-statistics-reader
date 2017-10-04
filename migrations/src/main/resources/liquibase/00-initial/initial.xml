@@ -1,0 +1,37 @@
+<databaseChangeLog xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
+    <changeSet id="1.0.0.1" author="Igor Yurchenko">
+        <createSequence sequenceName="fileSequence"/>
+    </changeSet>
+
+    <changeSet id="1.0.0.2" author="Igor Yurchenko">
+        <createTable tableName="files">
+            <column name="file_id" type="BIGINT" valueSequenceNext="fileSequence" />
+            <column name="file_name" type="VARCHAR"/>
+        </createTable>
+        <addNotNullConstraint tableName="files" columnName="file_id" constraintName="file_id_not_null" columnDataType="BIGINT"/>
+        <addPrimaryKey tableName="files" columnNames="file_id" constraintName="file_id_pk"/>
+        <addNotNullConstraint tableName="files" columnName="file_name" constraintName="file_name_not_null" columnDataType="VARCHAR"/>
+        <addUniqueConstraint tableName="files" columnNames="file_name" constraintName="files_name_unique"/>
+    </changeSet>
+
+    <changeSet id="1.0.0.3" author="Igor Yurchenko">
+        <createTable tableName="lines">
+            <column name="file_id" type="BIGINT"/>
+            <column name="line_pos_indicator" type="BIGINT"/>
+            <column name="line_src" type="CLOB"/>
+            <column name="line_longest_word" type="VARCHAR(255)"/>
+            <column name="line_shortest_word" type="VARCHAR(255)"/>
+            <column name="line_length" type="BIGINT"/>
+            <column name="line_avg_word_length" type="BIGINT"/>
+        </createTable>
+        <addNotNullConstraint tableName="lines" columnName="file_id" columnDataType="BIGINT" constraintName="lines_file_id_not_null"/>
+        <addNotNullConstraint tableName="lines" columnName="line_pos_indicator" columnDataType="BIGINT" constraintName="line_pos_indicator_not_null"/>
+        <addForeignKeyConstraint baseTableName="lines" baseColumnNames="file_id"
+                                 referencedTableName="files" referencedColumnNames="file_id" onDelete="CASCADE"
+                                 constraintName="lines_file_id_pk"/>
+        <addPrimaryKey tableName="lines" columnNames="file_id,line_pos_indicator" constraintName="lines_pk"/>
+    </changeSet>
+
+</databaseChangeLog>

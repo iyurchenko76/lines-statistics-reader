@@ -14,7 +14,6 @@ import java.util.Spliterator;
 import java.util.function.Consumer;
 
 public class RandomAccessFileLinesSpliterator implements Spliterator<Line>, Closeable {
-    private static volatile int splitCounter = 0;
     private static final String FILE_OPEN_MODE = "r";
     private static final int BUFFER_SIZE = 512;
     private static final int MIN_BATCH_SIZE = 2048;
@@ -25,7 +24,6 @@ public class RandomAccessFileLinesSpliterator implements Spliterator<Line>, Clos
     private long endPosition;
     private long counterIndicator;
     private LimitedInputStream limitedInputStream;
-    private final int currentSplit = splitCounter++;
     private final long startPosition;
 
     public RandomAccessFileLinesSpliterator(File file) throws IOException {
@@ -92,7 +90,7 @@ public class RandomAccessFileLinesSpliterator implements Spliterator<Line>, Clos
                 return true;
             } else {
                 if (randomAccessFile.getFilePointer() > endPosition) {
-                    throw new IllegalStateException(String.format("Split %d, end position (%d) is exceeded by %d byte(s)", currentSplit, endPosition, randomAccessFile.getFilePointer() - endPosition));
+                    throw new IllegalStateException(String.format("End position (%d) is exceeded by %d byte(s)", endPosition, randomAccessFile.getFilePointer() - endPosition));
                 }
                 return false;
             }
@@ -125,11 +123,7 @@ public class RandomAccessFileLinesSpliterator implements Spliterator<Line>, Clos
 
     @Override
     public long estimateSize() {
-        try {
-            return endPosition + 1 - randomAccessFile.getFilePointer();
-        } catch (IOException e) {
-            return -1;
-        }
+        return endPosition + 1 - startPosition;
     }
 
     @Override
