@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
@@ -16,7 +15,7 @@ public class ConnectionProvider {
     private static final String DB_USERNAME_PROP = "db.username";
     private static final String DB_PASSWORD_PROP = "db.password";
 
-    private static final String DB_URL_DEFAULT = "jdbc:h2:mem:";
+    private static final String DB_URL_DEFAULT = "jdbc:h2:mem:single";
     private static final String DB_USERNAME_DEFAULT = "";
     private static final String DB_PASSWORD_DEFAULT = "";
 
@@ -42,6 +41,7 @@ public class ConnectionProvider {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
         dbUrl = System.getProperty(DB_URL_PROP, properties.getProperty(DB_URL_PROP, DB_URL_DEFAULT));
         dbUserName = System.getProperty(DB_USERNAME_PROP, properties.getProperty(DB_USERNAME_PROP, DB_USERNAME_DEFAULT));
         dbPassword = System.getProperty(DB_PASSWORD_PROP, properties.getProperty(DB_PASSWORD_PROP, DB_PASSWORD_DEFAULT));
@@ -52,7 +52,6 @@ public class ConnectionProvider {
         dataSource.setUrl(dbUrl);
         dataSource.setUsername(dbUserName);
         dataSource.setPassword(dbPassword);
-
         dataSource.setConnectionProperties("poolPreparedStatements=true;maxOpenPreparedStatements=20");
     }
 

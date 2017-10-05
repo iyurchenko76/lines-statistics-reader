@@ -1,30 +1,34 @@
 package org.test.db.dao;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.function.Consumer;
 
 import static org.test.db.connection.ConnectionProvider.getProviderConnection;
 
-abstract public class AbstractDao<T> implements AutoCloseable {
-    private ThreadLocal<Connection> connectionHolder;
+abstract public class AbstractDao implements AutoCloseable {
+    private ThreadLocal<Connection> connectionHolder = new ThreadLocal<>();
+    private ThreadLocal<BatchCounter> batchCounterHolder = new ThreadLocal<>();
 
-    abstract public Object save(T object) throws SQLException;
+    private volatile boolean batchIsEnabled;
 
-    abstract public void remove(Object ... id) throws SQLException;
-
-    abstract public T find(Object ... id) throws SQLException;
 
     protected Connection getConnection() throws SQLException {
-        if (connectionHolder.get() == null) {
-            connectionHolder.set(getProviderConnection());
+        Connection connection = connectionHolder.get();
+        if (connection == null) {
+            connection = getProviderConnection();
+            connectionHolder.set(connection);
         }
-        return connectionHolder.get();
+        return connection;
     }
 
     protected PreparedStatement prepareStatement(String sql) throws SQLException {
         return getConnection().prepareStatement(sql);
+    }
+
+    protected void executeInBatch(String sql, Consumer<PreparedStatement> consumer) {
+        // TODO: implement batch storing
     }
 
     public void beginTransaction() throws SQLException {
@@ -32,22 +36,26 @@ abstract public class AbstractDao<T> implements AutoCloseable {
     }
 
     public void commitTransaction() throws SQLException {
-        getConnection().commit();
+        Connection connection = getConnection();
+        connection.commit();
+        connection.setAutoCommit(true);
     }
 
     public void rollbackTransaction() throws SQLException {
-        getConnection().rollback();
+        Connection connection = getConnection();
+        connection.rollback();
+        connection.setAutoCommit(true);
     }
 
     @Override
     public void close() throws Exception {
         try {
             Connection connection = connectionHolder.get();
-            if (connection != null) {
+            if (connection != null && !connection.isClosed()) {
                 connection.close();
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         } finally {
             connectionHolder.remove();
         }

@@ -7,7 +7,7 @@
 
     <changeSet id="1.0.0.2" author="Igor Yurchenko">
         <createTable tableName="files">
-            <column name="file_id" type="BIGINT" valueSequenceNext="fileSequence" />
+            <column name="file_id" type="BIGINT" defaultValueSequenceNext="fileSequence" />
             <column name="file_name" type="VARCHAR"/>
         </createTable>
         <addNotNullConstraint tableName="files" columnName="file_id" constraintName="file_id_not_null" columnDataType="BIGINT"/>
