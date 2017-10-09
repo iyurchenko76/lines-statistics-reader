@@ -46,13 +46,17 @@ public class ConnectionProvider {
         dbUserName = System.getProperty(DB_USERNAME_PROP, properties.getProperty(DB_USERNAME_PROP, DB_USERNAME_DEFAULT));
         dbPassword = System.getProperty(DB_PASSWORD_PROP, properties.getProperty(DB_PASSWORD_PROP, DB_PASSWORD_DEFAULT));
 
-        LiquibaseMigrations.update(dbUrl, dbUserName, dbPassword);
-
-        dataSource = new BasicDataSource();
-        dataSource.setUrl(dbUrl);
-        dataSource.setUsername(dbUserName);
-        dataSource.setPassword(dbPassword);
-        dataSource.setConnectionProperties("poolPreparedStatements=true;maxOpenPreparedStatements=20");
+        try (LiquibaseMigrations migrations = new LiquibaseMigrations(dbUrl, dbUserName, dbPassword)) {
+            migrations.update();
+            dataSource = new BasicDataSource();
+            dataSource.setUrl(dbUrl);
+            dataSource.setUsername(dbUserName);
+            dataSource.setPassword(dbPassword);
+            dataSource.setConnectionProperties("poolPreparedStatements=true;maxOpenPreparedStatements=20");
+            dataSource.getConnection();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public Connection getConnection() throws SQLException {

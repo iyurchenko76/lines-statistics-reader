@@ -26,6 +26,8 @@ public class RandomAccessFileLinesSpliterator implements Spliterator<Line>, Clos
     private LimitedInputStream limitedInputStream;
     private final long startPosition;
 
+    private boolean searchLF = false;
+
     public RandomAccessFileLinesSpliterator(File file) throws IOException {
         this.file = file;
         this.endPosition = file.length() - 1;
@@ -60,7 +62,9 @@ public class RandomAccessFileLinesSpliterator implements Spliterator<Line>, Clos
         int count;
         while ((count = randomAccessFile.read(buffer)) > 0) {
             int eolPos = findEOL(buffer, count);
-            if (eolPos >= 0) {
+            if (searchLF) {
+                pos = pos + eolPos;
+            } else if (eolPos > 0) {
                 pos = pos + eolPos;
                 randomAccessFile.seek(pos + 1);
                 break;
@@ -73,11 +77,25 @@ public class RandomAccessFileLinesSpliterator implements Spliterator<Line>, Clos
 
     private int findEOL(byte[] buffer, int length) {
         for (int i = 0; i < length; i++) {
-            if (buffer[i] == 10 || buffer[i] == 13) {
-                return i;
+            if (searchLF) {
+                searchLF = false;
+                if (buffer[i] != 10) {
+                    return i;
+                }
+            }
+
+            if (buffer[i] == 10) {
+                return i + 1;
+            } else if (buffer[i] == 13) {
+                searchLF = true;
             }
         }
-        return -1;
+
+        if (searchLF) {
+            return length;
+        } else {
+            return -1;
+        }
     }
 
     @Override
@@ -110,7 +128,7 @@ public class RandomAccessFileLinesSpliterator implements Spliterator<Line>, Clos
                 endPosition = navigateFinalEol(splitRandomAccessFile, splitPos);
                 limitedInputStream.setLimit(endPosition - startPosition);
                 if (splitRandomAccessFile.getFilePointer() <= endPosition) {
-                    throw new IllegalStateException(String.format("The new iterator's position is before previous end"));
+                    throw new IllegalStateException(String.format("The new split's position is before end of current split"));
                 }
                 return new RandomAccessFileLinesSpliterator(file, splitRandomAccessFile, splitEndPos);
             } else {

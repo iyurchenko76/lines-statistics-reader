@@ -4,7 +4,6 @@ import org.junit.Test;
 import org.test.input.pojo.Line;
 
 import java.io.File;
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -28,8 +27,6 @@ public class RandomAccessFileLinesStreamerTest {
         // THEN
         assertTrue(lineStream.isParallel());
         List<Line> lineList = lineStream.collect(Collectors.toList());
-//        lineList.sort(Comparator.comparingLong(Line::getPosIndicator));
-        lineList.sort(Comparator.comparing(Line::getSource));
         assertThat(lineList, hasSize(29625));
     }
 
