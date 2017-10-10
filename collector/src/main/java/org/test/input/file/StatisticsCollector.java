@@ -7,8 +7,6 @@ import org.test.stat.LineStatisticsBuilder;
 import java.io.Closeable;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ForkJoinPool;
 
 public class StatisticsCollector implements Closeable {
     private final int fileId;
@@ -21,37 +19,24 @@ public class StatisticsCollector implements Closeable {
         this.fileId = fileId;
     }
 
-    public long collect(boolean parallel) {
+    public long collect() {
         try {
             lineStatisticsDao.removeAllLinesForFileId(fileId);
             lineStatisticsDao.beginBatch(100);
-            if (parallel) {
-                return new ForkJoinPool(20).submit(() -> process(true)).get();
-            } else {
-                return process(false);
-            }
-        } catch (SQLException | InterruptedException | ExecutionException e) {
+            int result = streamer.stream(false)
+                    .map(lineStatisticsBuilder::buildStatistics)
+                    .map(lineStatistics -> {
+                        try {
+                            return lineStatisticsDao.saveLineStatistics(fileId, lineStatistics);
+                        } catch (SQLException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }).reduce(0, Integer::sum);
+            result += lineStatisticsDao.endBatch();
+            return result;
+        } catch (SQLException e) {
             throw new RuntimeException(e);
-        } finally {
-            try {
-                lineStatisticsDao.endBatch();
-            } catch (SQLException e) {
-                throw new  RuntimeException(e);
-            }
         }
-    }
-
-    private int process(boolean parallel) {
-        return streamer.stream(parallel)
-                .map(lineStatisticsBuilder::buildStatistics)
-                .map(lineStatistics -> {
-                    try {
-                        System.out.println(Thread.currentThread().getName() + ": " + lineStatistics.getLine().getPosIndicator());
-                        return lineStatisticsDao.saveLineStatistics(fileId, lineStatistics);
-                    } catch (SQLException e) {
-                        throw new RuntimeException(e);
-                    }
-                }).reduce(0, Integer::sum);
     }
 
     @Override

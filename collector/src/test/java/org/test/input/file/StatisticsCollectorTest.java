@@ -22,7 +22,7 @@ public class StatisticsCollectorTest {
         ReadableLinesStreamer streamer = new ReadableLinesStreamer(new StringReader("line 1\nline 2\nline 3"));
         StatisticsCollector collector = new StatisticsCollector(streamer, testFileId);
         // WHEN
-        long result = collector.collect(false);
+        long result = collector.collect();
         // THEN
         assertThat(result, is(3L));
         assertThat(lineStatisticsDao.getLineStatisticsByFileId(testFileId).count(), is(3L));
@@ -39,7 +39,7 @@ public class StatisticsCollectorTest {
         RandomAccessFileLinesStreamer streamer = new RandomAccessFileLinesStreamer(file);
         StatisticsCollector collector = new StatisticsCollector(streamer, fileId);
         // WHEN
-        long result = collector.collect(true);
+        long result = collector.collect();
         // THEN
         assertThat(result, is(29625L));
         assertThat(lineStatisticsDao.getLineStatisticsByFileId(fileId).count(), is(29625L));

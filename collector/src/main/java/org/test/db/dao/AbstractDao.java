@@ -6,17 +6,17 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static org.test.db.connection.ConnectionProvider.getProviderConnection;
 
 abstract public class AbstractDao implements AutoCloseable {
-    private final ConcurrentHashMap<PreparedStatement, BatchCounter> batchStatementMap = new ConcurrentHashMap<>();
-    private ThreadLocal<Connection> connectionHolder = new ThreadLocal<>();
-    private ThreadLocal<Map<String, PreparedStatement>> statementHolder =
+    private final ThreadLocal<Map<PreparedStatement, BatchCounter>> batchStatementMap =
+            ThreadLocal.withInitial(HashMap<PreparedStatement, BatchCounter>::new);
+    private final ThreadLocal<Connection> connectionHolder = new ThreadLocal<>();
+    private final ThreadLocal<Map<String, PreparedStatement>> statementHolder =
             ThreadLocal.withInitial(HashMap<String, PreparedStatement>::new);
-    private volatile boolean batchIsEnabled;
-    private volatile int batchSize;
+    private boolean batchIsEnabled;
+    private int batchSize;
 
 
     protected Connection getConnection() throws SQLException {
@@ -49,9 +49,9 @@ abstract public class AbstractDao implements AutoCloseable {
         return batchIsEnabled;
     }
 
-    public synchronized int endBatch() throws SQLException {
+    public int endBatch() throws SQLException {
         batchIsEnabled = false;
-        int result = batchStatementMap.entrySet().stream()
+        int result = batchStatementMap.get().entrySet().stream()
                 .filter(entry -> entry.getValue().getValue() > 0)
                 .map(entry -> {
                     try {
@@ -61,15 +61,15 @@ abstract public class AbstractDao implements AutoCloseable {
                     }
                 }).reduce(0, Integer::sum);
         commitTransaction();
-        batchStatementMap.clear();
+        batchStatementMap.get().clear();
         return result;
     }
 
     protected int executeInBatch(PreparedStatement statement) throws SQLException {
-        BatchCounter counter = batchStatementMap.get(statement);
+        BatchCounter counter = batchStatementMap.get().get(statement);
         if (counter == null) {
             counter = new BatchCounter();
-            batchStatementMap.put(statement, counter);
+            batchStatementMap.get().put(statement, counter);
         }
         if (counter.getValue() == 0) {
             beginTransaction();
@@ -79,7 +79,7 @@ abstract public class AbstractDao implements AutoCloseable {
         if (counter.incrementAndGet() == batchSize) {
             result = Arrays.stream(statement.executeBatch()).sum();
             commitTransaction();
-            batchStatementMap.remove(statement);
+            batchStatementMap.get().remove(statement);
         }
         return result;
     }
