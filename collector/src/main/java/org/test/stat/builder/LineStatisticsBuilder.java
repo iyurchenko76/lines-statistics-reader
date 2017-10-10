@@ -1,4 +1,4 @@
-package org.test.stat;
+package org.test.stat.builder;
 
 import org.test.input.pojo.Line;
 import org.test.stat.pojo.LineStatistics;

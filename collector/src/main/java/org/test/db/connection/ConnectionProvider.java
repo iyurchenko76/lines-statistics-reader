@@ -21,14 +21,11 @@ public class ConnectionProvider {
 
     private static final String DB_PROPERTIES_FILE_NAME_PROP = "db.prop.location";
     private static final String DB_PROPERTIES_FILE_NAME = "db.properties";
-
+    private static final ConnectionProvider provider = new ConnectionProvider();
     private final String dbUrl;
     private final String dbUserName;
     private final String dbPassword;
-
     private final BasicDataSource dataSource;
-
-    private static final ConnectionProvider provider = new ConnectionProvider();
 
 
     private ConnectionProvider() {
@@ -52,15 +49,14 @@ public class ConnectionProvider {
             dataSource.setUrl(dbUrl);
             dataSource.setUsername(dbUserName);
             dataSource.setPassword(dbPassword);
-            dataSource.setConnectionProperties("poolPreparedStatements=true;maxOpenPreparedStatements=20");
+            dataSource.setConnectionProperties("maxTotal=100;maxIdle=5;maxWaitMillis=100000");
+            dataSource.setMaxTotal(100);
+            dataSource.setMaxIdle(5);
+            dataSource.setMaxWaitMillis(100000);
             dataSource.getConnection();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public Connection getConnection() throws SQLException {
-        return dataSource.getConnection();
     }
 
     public static ConnectionProvider getProvider() {
@@ -69,5 +65,9 @@ public class ConnectionProvider {
 
     public static Connection getProviderConnection() throws SQLException {
         return getProvider().getConnection();
+    }
+
+    public Connection getConnection() throws SQLException {
+        return dataSource.getConnection();
     }
 }

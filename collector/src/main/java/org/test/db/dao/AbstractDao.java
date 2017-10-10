@@ -15,8 +15,8 @@ abstract public class AbstractDao implements AutoCloseable {
     private final ThreadLocal<Connection> connectionHolder = new ThreadLocal<>();
     private final ThreadLocal<Map<String, PreparedStatement>> statementHolder =
             ThreadLocal.withInitial(HashMap<String, PreparedStatement>::new);
-    private boolean batchIsEnabled;
-    private int batchSize;
+    private ThreadLocal<Boolean> batchIsEnabled = ThreadLocal.withInitial(() -> Boolean.FALSE);
+    private ThreadLocal<Integer> batchSize = ThreadLocal.withInitial(() -> 0);
 
 
     protected Connection getConnection() throws SQLException {
@@ -38,19 +38,19 @@ abstract public class AbstractDao implements AutoCloseable {
     }
 
     public synchronized void beginBatch(int size) {
-        if (batchIsEnabled) {
+        if (batchIsEnabled.get()) {
             throw new IllegalStateException("Batch is already started");
         }
-        this.batchIsEnabled = true;
-        this.batchSize = size;
+        this.batchIsEnabled.set(true);
+        this.batchSize.set(size);
     }
 
     public boolean batchIsEnabled() {
-        return batchIsEnabled;
+        return batchIsEnabled.get();
     }
 
     public int endBatch() throws SQLException {
-        batchIsEnabled = false;
+        batchIsEnabled.set(false);
         int result = batchStatementMap.get().entrySet().stream()
                 .filter(entry -> entry.getValue().getValue() > 0)
                 .map(entry -> {
@@ -76,7 +76,7 @@ abstract public class AbstractDao implements AutoCloseable {
         }
         statement.addBatch();
         int result = 0;
-        if (counter.incrementAndGet() == batchSize) {
+        if (counter.incrementAndGet() == batchSize.get()) {
             result = Arrays.stream(statement.executeBatch()).sum();
             commitTransaction();
             batchStatementMap.get().remove(statement);

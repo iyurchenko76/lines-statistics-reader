@@ -1,7 +1,8 @@
-package org.test.stat;
+package org.test.stat.builder;
 
 import org.junit.Test;
 import org.test.input.pojo.Line;
+import org.test.stat.builder.LineStatisticsBuilder;
 import org.test.stat.pojo.LineStatistics;
 
 import static org.hamcrest.CoreMatchers.is;
