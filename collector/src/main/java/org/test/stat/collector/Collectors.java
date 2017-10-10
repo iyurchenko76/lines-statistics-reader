@@ -11,7 +11,8 @@ public class Collectors {
 
     public static StatisticsCollector getFileStatisticsCollector(File file, FileDao fileDao) {
         try {
-            int fileId = fileDao.saveFile(file.getName());
+            int fileId = fileDao.saveFile(file.getAbsolutePath());
+            fileDao.commitTransaction();
             return new StatisticsCollector(Streamers.getFileStreamer(file), fileId);
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -21,6 +22,7 @@ public class Collectors {
     public static StatisticsCollector getReadableStatisticsCollector(Readable readable, String virtualFileName, FileDao fileDao) {
         try {
             int fileId = fileDao.saveFile(virtualFileName);
+            fileDao.commitTransaction();
             return new StatisticsCollector(Streamers.getReadableStreamer(readable), fileId);
         } catch (SQLException e) {
             throw new RuntimeException(e);
