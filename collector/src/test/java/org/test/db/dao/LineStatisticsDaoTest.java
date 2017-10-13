@@ -19,7 +19,7 @@ public class LineStatisticsDaoTest {
     public void shouldStoreLineForFileId() throws Exception {
         // GIVEN
         FileDao fileDao = new FileDao();
-        int fileId = fileDao.saveFile("testFile" + System.currentTimeMillis());
+        int fileId = fileDao.saveFile("testFile1" + System.currentTimeMillis());
         LineStatistics lineStatistics = new LineStatistics(new Line(1, "ew rwerwe"),
                 "rwerwe", "ew", 9, 4);
         // WHEN
@@ -32,7 +32,7 @@ public class LineStatisticsDaoTest {
     public void shouldRemoveAllLinesForFileId() throws Exception {
         // GIVEN
         FileDao fileDao = new FileDao();
-        int fileId = fileDao.saveFile("testFile" + System.currentTimeMillis());
+        int fileId = fileDao.saveFile("testFile2" + System.currentTimeMillis());
         LineStatistics lineStatistics1 = new LineStatistics(new Line(1, "ew rwerwe"),
                 "rwerwe", "ew", 9, 4);
         LineStatistics lineStatistics2 = new LineStatistics(new Line(2, "ew rwerwe"),
@@ -49,7 +49,7 @@ public class LineStatisticsDaoTest {
     public void shouldReturnStreamOfLines() throws Exception {
         // GIVEN
         FileDao fileDao = new FileDao();
-        int fileId = fileDao.saveFile("testFile" + System.currentTimeMillis());
+        int fileId = fileDao.saveFile("testFile3" + System.currentTimeMillis());
         LineStatistics lineStatistics1 = new LineStatistics(new Line(1, "ew rwerwe"),
                 "rwerwe", "ew", 9, 4);
         LineStatistics lineStatistics2 = new LineStatistics(new Line(2, "ew rwerwe"),

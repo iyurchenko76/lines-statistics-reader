@@ -37,7 +37,7 @@ abstract public class AbstractDao implements AutoCloseable {
         return statement;
     }
 
-    public synchronized void beginBatch(int size) {
+    public void beginBatch(int size) {
         if (batchIsEnabled.get()) {
             throw new IllegalStateException("Batch is already started");
         }
